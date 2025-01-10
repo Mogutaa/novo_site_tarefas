@@ -4,9 +4,14 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from pymongo import MongoClient
 from bson import ObjectId
+from dotenv import load_dotenv
+import os
 
-# Definir a URI de conexão
-uri = "mongodb+srv://tarefasinteli:DaXD3KyyMvHbq-y@cluster0.b0h4u.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+# Carregar variáveis do .env
+load_dotenv()
+
+# Definir a URI de conexão usando a variável de ambiente
+uri = os.getenv("MONGO_URI")
 
 # Conectar ao MongoDB usando a URI
 client = MongoClient(uri)
@@ -15,12 +20,12 @@ client = MongoClient(uri)
 db = client["gerenciamento_tarefas"]  # Nome do banco de dados
 tarefas_collection = db["tarefas"]  # Nome da coleção de tarefas
 
-# Dicionário de usuários (para exemplo simples)
+# Carregar os usuários do .env
 usuarios = {
-    "admin": "1234",
-    "alan": "senha123",
-    "gustavo": "senha123",
-    "eryck": "senha123",
+    "admin": os.getenv("USERS_ADMIN"),
+    "alan": os.getenv("USERS_ALAN"),
+    "gustavo": os.getenv("USERS_GUSTAVO"),
+    "eryck": os.getenv("USERS_ERYCK"),
 }
 
 # Função para verificar login
@@ -32,6 +37,13 @@ def verificar_login(usuario, senha):
 # Função para adicionar uma nova tarefa no MongoDB
 def adicionar_tarefa_mongodb(tarefa):
     tarefas_collection.insert_one(tarefa)
+
+def alterar_status_mongodb(tarefa_id, novo_status, usuario):
+    tarefas_collection.update_one(
+        {"_id": ObjectId(tarefa_id)},
+        {"$set": {"status": novo_status},
+         "$push": {"historico": f"{datetime.datetime.now()}: Status alterado para '{novo_status}' por {usuario}."}}  # Adicionando o usuário
+    )
 
 # Função para buscar as tarefas do MongoDB
 def buscar_tarefas_mongodb():
@@ -53,6 +65,9 @@ def tela_login():
         else:
             st.error("Usuário ou senha incorretos!")
 
+def remover_tarefa_mongodb(tarefa_id):
+    """Remove uma tarefa do MongoDB."""
+    tarefas_collection.delete_one({"_id": ObjectId(tarefa_id)})
 # Função para adicionar uma nova tarefa com formulário
 def adicionar_tarefa():
     st.subheader("Adicionar Nova Tarefa")
@@ -87,7 +102,7 @@ def adicionar_tarefa():
                 st.success(f"Tarefa '{titulo}' adicionada com sucesso!")
 
 # Função para gerenciar tarefas com filtros e remoção
-def gerenciar_tarefas():
+def gerenciar_tarefas(): 
     st.subheader("Gerenciar Tarefas")
     
     tarefas = buscar_tarefas_mongodb()  # Recuperando as tarefas do MongoDB
@@ -122,31 +137,53 @@ def gerenciar_tarefas():
         tarefas_filtradas = [t for t in tarefas_filtradas if datetime.datetime.strptime(t["adicionada_em"], "%d/%m/%Y").date() <= filtro_data_final]
 
     # Exibindo as tarefas filtradas com estilo de card
-    for i, tarefa in enumerate(tarefas_filtradas):
+    for tarefa in tarefas_filtradas:
+        # Corrigir a formatação da descrição e do histórico
+        descricao_formatada = tarefa['descricao'].replace('\n', '<br>')
+        
+        # Formatando o histórico com a tag <ul> corretamente
+        historico_formatado = ""
+        for evento in tarefa.get('historico', []):
+            historico_formatado += f"<li>{evento.replace('\n', '<br>')}</li>"
+
         st.markdown(
             f"""
-            <div style="border: 2px solid #ddd; border-radius: 10px; padding: 15px; margin-bottom: 20px; background-color: #f9f9f9;">
-                <h3 style="color: #333;">{tarefa['titulo']}</h3>
-                <p><b>Descrição:</b> {tarefa['descricao']}</p>
+            <div style="border: 2px solid #ddd; border-radius: 10px; padding: 15px; margin-bottom: 20px; background-color: #f9f9f9; box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);">
+                <h3 style="color: #333; font-size: 20px; margin-bottom: 10px;">{tarefa['titulo']}</h3>
+                <p><b>Descrição:</b> {descricao_formatada}</p>
                 <p><b>Adicionada em:</b> {tarefa['adicionada_em']}</p>
                 <p><b>Prazo:</b> {tarefa['prazo_exibicao']}</p>
-                <p><b><span style="color: #2e8b57;">Criado por:</span></b> <b>{tarefa['criador']}</b></p>
-                <p><b><span style="color: #1e90ff;">Destinatário:</span></b> <b>{tarefa['destinatario']}</b></p>
-                <p>
-                    <b>Status:</b>
+                <p><b>Criado por:</b> {tarefa['criador']}</p>
+                <p><b>Destinatário:</b> {tarefa['destinatario']}</p>
+                <p><b>Status Atual:</b> 
                     <span style="color: {'red' if tarefa['status'] == 'Não iniciada' else 'orange' if tarefa['status'] == 'Em andamento' else 'green'};">
                     {'🔴 Não Iniciada' if tarefa['status'] == 'Não iniciada' else '🟠 Em Andamento' if tarefa['status'] == 'Em andamento' else '🟢 Concluída'}</span>
                 </p>
                 <p><b>Histórico:</b></p>
-                <ul style="padding-left: 20px;">
-                    {"".join([f"<li>{evento}</li>" for evento in tarefa['historico']])}
+                <ul style="padding-left: 20px; list-style: disc;">
+                    {historico_formatado}
                 </ul>
-                <div style="display: flex; justify-content: space-between;">
-                    <button style="padding: 5px 10px; background-color: #4CAF50; color: white; border: none; border-radius: 5px;" onclick="alterar_status()">Alterar Status</button>
-                    <button style="padding: 5px 10px; background-color: #f44336; color: white; border: none; border-radius: 5px;" onclick="remover_tarefa()">🗑️ Remover Tarefa</button>
-                </div>
             </div>
             """, unsafe_allow_html=True)
+
+        # Controles para ações
+        col1, col2 = st.columns([3, 1])  # Ajustar layout
+        with col1:
+            novo_status = st.selectbox(
+                f"Alterar status de '{tarefa['titulo']}'",
+                ["Não iniciada", "Em andamento", "Concluída"],
+                index=["Não iniciada", "Em andamento", "Concluída"].index(tarefa["status"])
+            )
+            if st.button(f"Salvar Alteração ({tarefa['titulo']})"):
+                alterar_status_mongodb(tarefa['_id'], novo_status, st.session_state['usuario'])  # Passando o usuário
+                st.success(f"Status da tarefa '{tarefa['titulo']}' alterado para '{novo_status}'.")
+                
+
+        with col2:
+            if st.button(f"Remover Tarefa ({tarefa['titulo']})"):
+                remover_tarefa_mongodb(tarefa['_id'])
+                st.warning(f"Tarefa '{tarefa['titulo']}' removida com sucesso.")
+
 
 # Função para gráficos de progresso das tarefas
 def graficos_progresso():

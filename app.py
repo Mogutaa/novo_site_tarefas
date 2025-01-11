@@ -113,8 +113,15 @@ def gerenciar_tarefas():
         return
     
     # Filtros
-    filtro_data_inicial = st.date_input("Filtrar por Data de Início", value=datetime.date.today())
-    filtro_data_final = st.date_input("Filtrar por Data Final", value=datetime.date.today())
+    filtro_data = st.radio("Filtrar por Data", ["Todas as Datas", "Por Período"])
+    
+    if filtro_data == "Por Período":
+        filtro_data_inicial = st.date_input("Filtrar por Data de Início", value=datetime.date.today())
+        filtro_data_final = st.date_input("Filtrar por Data Final", value=datetime.date.today())
+    else:
+        filtro_data_inicial = None
+        filtro_data_final = None
+    
     filtro_criador = st.multiselect("Filtrar por Criador", ["Todos"] + list(set([t["criador"] for t in tarefas])))
     filtro_destinatario = st.multiselect("Filtrar por Destinatário", ["Todos"] + list(set([t["destinatario"] for t in tarefas])))
     filtro_status = st.multiselect("Filtrar por Status", ["Todos", "Não iniciada", "Em andamento", "Concluída"])
@@ -184,6 +191,7 @@ def gerenciar_tarefas():
             if st.button(f"Remover Tarefa ({tarefa['titulo']})"):
                 remover_tarefa_mongodb(tarefa['_id'])
                 st.warning(f"Tarefa '{tarefa['titulo']}' removida com sucesso.")
+
 
 
 # Função para gráficos de progresso das tarefas

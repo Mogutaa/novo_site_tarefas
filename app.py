@@ -4,10 +4,14 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from pymongo import MongoClient
 from bson import ObjectId
-import textwrap
+from dotenv import load_dotenv
+import os
 
-# Definir a URI de conexão
-uri = "mongodb+srv://tarefasinteli:DaXD3KyyMvHbq-y@cluster0.b0h4u.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+# Carregar variáveis do .env
+load_dotenv()
+
+# Recuperar a URI do MongoDB
+uri = os.getenv("MONGODB_URI")
 
 # Conectar ao MongoDB usando a URI
 client = MongoClient(uri)
@@ -16,13 +20,14 @@ client = MongoClient(uri)
 db = client["gerenciamento_tarefas"]  # Nome do banco de dados
 tarefas_collection = db["tarefas"]  # Nome da coleção de tarefas
 
-# Dicionário de usuários (para exemplo simples)
+# Dicionário de usuários (usando variáveis de ambiente)
 usuarios = {
-    "admin": "1234",
-    "alan": "senha123",
-    "gustavo": "senha123",
-    "eryck": "senha123",
+    "admin": os.getenv("ADMIN_PASSWORD"),
+    "alan": os.getenv("ALAN_PASSWORD"),
+    "gustavo": os.getenv("GUSTAVO_PASSWORD"),
+    "eryck": os.getenv("ERYCK_PASSWORD"),
 }
+
 
 # Função para verificar login
 def verificar_login(usuario, senha):

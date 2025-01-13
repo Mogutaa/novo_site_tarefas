@@ -5,6 +5,7 @@ import pandas as pd
 from pymongo import MongoClient
 from bson import ObjectId
 from dotenv import load_dotenv
+import bcrypt
 import os
 
 # Carregar variáveis do .env
@@ -18,6 +19,7 @@ client = MongoClient(uri)
 
 # Acessar o banco de dados e a coleção
 db = client["gerenciamento_tarefas"]  # Nome do banco de dados
+usuarios_collection = db["usuarios"]  # Nome da coleção de usuários
 tarefas_collection = db["tarefas"]  # Nome da coleção de tarefas
 
 # Dicionário de usuários (usando variáveis de ambiente)
@@ -27,6 +29,26 @@ usuarios = {
     "gustavo": os.getenv("USERS_GUSTAVO"),
     "eryck": os.getenv("USERS_ERYCK"),
 }
+
+# Função para hash de senha
+def hash_senha(senha):
+    # Gerar o salt e hash para a senha
+    salt = bcrypt.gensalt()
+    hashed = bcrypt.hashpw(senha.encode('utf-8'), salt)
+    return hashed
+
+# Verificar se já existem usuários no MongoDB
+if usuarios_collection.count_documents({}) == 0:
+    for user, senha in usuarios.items():
+        # Criar hash da senha
+        hashed_senha = hash_senha(senha)
+        
+        # Inserir o usuário no banco de dados
+        usuarios_collection.insert_one({"username": user, "senha": hashed_senha})
+
+    st.write("Usuários cadastrados com sucesso!")
+else:
+    st.write("Usuários já estão cadastrados no banco de dados.")
 
 
 # Função para verificar login

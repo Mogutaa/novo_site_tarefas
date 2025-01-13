@@ -53,13 +53,21 @@ else:
 
 # Função para verificar login
 def verificar_login(usuario, senha):
-    if usuario in usuarios and usuarios[usuario] == senha:
+    usuario_db = usuarios_collection.find_one({"username": usuario})
+    if usuario_db and bcrypt.checkpw(senha.encode('utf-8'), usuario_db["senha"]):
         return True
     return False
 
 # Função para adicionar uma nova tarefa no MongoDB
 def adicionar_tarefa_mongodb(tarefa):
     tarefas_collection.insert_one(tarefa)
+
+def logout():
+    if 'logado' in st.session_state:
+        del st.session_state['logado']
+        del st.session_state['usuario']
+        st.success("Você foi deslogado com sucesso!")
+   
 
 def alterar_status_mongodb(tarefa_id, novo_status, usuario):
     tarefas_collection.update_one(
@@ -317,7 +325,7 @@ def main():
         tela_login()
     else:
         st.sidebar.title("Menu")
-        opcao = st.sidebar.selectbox("Selecione uma opção", ["Visão Geral", "Adicionar Tarefa", "Gerenciar Tarefas", "Gráficos de Progresso"])
+        opcao = st.sidebar.selectbox("Selecione uma opção", ["Visão Geral", "Adicionar Tarefa", "Gerenciar Tarefas", "Gráficos de Progresso", "Sair"])
         
         if opcao == "Visão Geral":
             tela_overview()
@@ -327,6 +335,8 @@ def main():
             gerenciar_tarefas()
         elif opcao == "Gráficos de Progresso":
             graficos_progresso()
+        elif opcao == "Gráficos de Progresso":
+            logout()
 
 # Chama a função principal
 if __name__ == "__main__":

@@ -38,6 +38,7 @@ def hash_senha(senha):
     return hashed
 
 # Verificar se já existem usuários no MongoDB
+"""
 if usuarios_collection.count_documents({}) == 0:
     for user, senha in usuarios.items():
         # Criar hash da senha
@@ -49,7 +50,7 @@ if usuarios_collection.count_documents({}) == 0:
     st.write("Usuários cadastrados com sucesso!")
 else:
     st.write("Usuários já estão cadastrados no banco de dados.")
-
+"""
 
 # Função para verificar login
 def verificar_login(usuario, senha):

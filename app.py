@@ -22,10 +22,10 @@ tarefas_collection = db["tarefas"]  # Nome da coleção de tarefas
 
 # Dicionário de usuários (usando variáveis de ambiente)
 usuarios = {
-    "admin": os.getenv("ADMIN_PASSWORD"),
-    "alan": os.getenv("ALAN_PASSWORD"),
-    "gustavo": os.getenv("GUSTAVO_PASSWORD"),
-    "eryck": os.getenv("ERYCK_PASSWORD"),
+    "admin": os.getenv("USERS_ADMIN"),
+    "alan": os.getenv("USERS_ALAN"),
+    "gustavo": os.getenv("USERS_GUSTAVO"),
+    "eryck": os.getenv("USERS_ERYCK"),
 }
 
 

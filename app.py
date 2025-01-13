@@ -11,7 +11,7 @@ import os
 load_dotenv()
 
 # Recuperar a URI do MongoDB
-uri = os.getenv("MONGODB_URI")
+uri = os.getenv("MONGO_URI")
 
 # Conectar ao MongoDB usando a URI
 client = MongoClient(uri)

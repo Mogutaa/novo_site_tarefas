@@ -241,9 +241,24 @@ def graficos_progresso():
 
 # Função de Overview
 def tela_overview():
-    st.title("Visão Geral das Tarefas")
-    
-    
+    st.title("📊 Visão Geral das Tarefas")
+
+    # Descrição explicativa abaixo da visão geral
+    st.markdown(
+    f"""
+    ## Bem-vindo {st.session_state['usuario']} à Visão Geral das Tarefas! 🎉
+
+    Aqui você pode visualizar o status de todas as tarefas em andamento 🛠️, 
+    concluídas ✅ ou ainda não iniciadas ⏳. Utilize as opções para alterar o status 
+    das tarefas conforme o andamento do seu trabalho. Além disso, você pode 
+    acompanhar o progresso do time através de gráficos 📊 e cartões interativos 📅.
+
+    Abaixo, você encontrará um resumo geral e gráficos sobre as tarefas do sistema. 
+    Com eles, você pode ter uma visão rápida do desempenho da equipe 💪 e do andamento 
+    dos projetos. Clique nas tarefas para ver mais detalhes 👇 e atualizar seu status.
+    """
+)
+
     # Buscar tarefas do MongoDB
     tarefas = buscar_tarefas_mongodb()
 
@@ -286,7 +301,7 @@ def tela_overview():
         st.markdown(
             f"""
             <div style="border: 2px solid #4CAF50; border-radius: 10px; padding: 15px; margin-bottom: 20px; background-color: #e8f5e9; box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);">
-                <h3 style="color: #388E3C; font-size: 20px; font-weight: bold;">Tarefas Concluídas</h3>
+                <h3 style="color: #388E3C; font-size: 20px; font-weight: bold;">Tarefas Concluídas ✅</h3>
                 <p style="font-size: 18px; color: #388E3C;"><b>{tarefas_por_status.get('Concluída', 0)}</b> tarefas concluídas</p>
             </div>
             """, unsafe_allow_html=True)
@@ -296,7 +311,7 @@ def tela_overview():
         st.markdown(
             f"""
             <div style="border: 2px solid #FF9800; border-radius: 10px; padding: 15px; margin-bottom: 20px; background-color: #fff3e0; box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);">
-                <h3 style="color: #F57C00; font-size: 20px; font-weight: bold;">Tarefas em Andamento</h3>
+                <h3 style="color: #F57C00; font-size: 20px; font-weight: bold;">Tarefas em Andamento 🛠️</h3>
                 <p style="font-size: 18px; color: #F57C00;"><b>{tarefas_por_status.get('Em andamento', 0)}</b> tarefas em andamento</p>
             </div>
             """, unsafe_allow_html=True)
@@ -306,19 +321,68 @@ def tela_overview():
         st.markdown(
             f"""
             <div style="border: 2px solid #f44336; border-radius: 10px; padding: 15px; margin-bottom: 20px; background-color: #ffebee; box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);">
-                <h3 style="color: #D32F2F; font-size: 20px; font-weight: bold;">Tarefas Não Iniciadas</h3>
+                <h3 style="color: #D32F2F; font-size: 20px; font-weight: bold;">Tarefas Não Iniciadas ⏳</h3>
                 <p style="font-size: 18px; color: #D32F2F;"><b>{tarefas_por_status.get('Não iniciada', 0)}</b> tarefas não iniciadas</p>
             </div>
             """, unsafe_allow_html=True)
 
     # Gráfico de status das tarefas
-    st.subheader("Gráfico de Status das Tarefas")
+    st.subheader("📊 Gráfico de Status das Tarefas")
     cores = ['#D32F2F', '#F57C00', '#388E3C']  # Vermelho, Laranja, Verde
     fig, ax = plt.subplots()
-    tarefas_por_status.plot(kind="pie", autopct='%1.1f%%', colors=cores, ax=ax)
-    ax.set_ylabel("")
-    plt.title("Distribuição das Tarefas por Status")
+    tarefas_por_status.plot(kind="bar", color=cores, ax=ax)
+
+    # Adicionando os números no topo de cada barra
+    for p in ax.patches:
+        ax.annotate(f'{p.get_height()}', 
+                    (p.get_x() + p.get_width() / 2., p.get_height()), 
+                    xytext=(0, 5), 
+                    textcoords='offset points', 
+                    ha='center', 
+                    va='bottom', 
+                    fontsize=12, color='black')
+
+    ax.set_ylabel("Número de Tarefas")
+    ax.set_xlabel("Status das Tarefas")
+    ax.set_title("Distribuição das Tarefas por Status")
     st.pyplot(fig)
+
+    # Exibir lista de tarefas com expander para mostrar detalhes
+    st.subheader("✅ Detalhes das Tarefas")
+    for tarefa in tarefas:
+        if tarefa['status'] != 'Concluída':  # Filtrando tarefas concluídas
+            with st.expander(f"{tarefa['titulo']} - Status: {tarefa['status']}"):
+                with st.container():
+                    # Exibir detalhes da tarefa
+                    st.write(f"**Descrição:** {tarefa['descricao']}")
+                    st.write(f"**Responsável:** {tarefa['destinatario']}")
+                    st.write(f"**Data de Criação:** {tarefa['adicionada_em']}")
+                    st.write(f"**Prazo (previsto):** {tarefa['prazo_exibicao']}")
+                    st.write(f"**Histórico:**")
+                    for evento in tarefa.get('historico', []):
+                        st.write(f"- {evento}")
+
+                    # Checkboxes para alternar entre os status
+                    status_atual = tarefa['status']
+                    if status_atual == "Não iniciada":
+                        if st.checkbox(f"Marcar como Em andamento", key=f"checkbox_iniciada_{tarefa['_id']}"):
+                            novo_status = "Em andamento"
+                            alterar_status_mongodb(tarefa['_id'], novo_status, st.session_state['usuario'])
+                            st.success(f"Tarefa '{tarefa['titulo']}' foi marcada como Em andamento.")
+                    elif status_atual == "Em andamento":
+                        if st.checkbox(f"Marcar como Concluída", key=f"checkbox_em_andamento_{tarefa['_id']}"):
+                            novo_status = "Concluída"
+                            alterar_status_mongodb(tarefa['_id'], novo_status, st.session_state['usuario'])
+                            st.success(f"Tarefa '{tarefa['titulo']}' foi marcada como Concluída.")
+                    elif status_atual == "Concluída":
+                        if st.checkbox(f"Reiniciar tarefa", key=f"checkbox_concluida_{tarefa['_id']}"):
+                            novo_status = "Não iniciada"
+                            alterar_status_mongodb(tarefa['_id'], novo_status, st.session_state['usuario'])
+                            st.success(f"Tarefa '{tarefa['titulo']}' foi marcada como Não iniciada.")
+
+
+
+
 
 # Função principal
 def main():

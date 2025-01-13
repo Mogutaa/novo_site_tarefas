@@ -84,11 +84,71 @@ def buscar_tarefas_mongodb():
 
 # Função para tela de login
 def tela_login():
-    st.title("Login")
+    # Estilização geral
+    st.markdown(
+        """
+        <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+        .main-title {
+            text-align: center;
+            font-size: 28px;
+            font-weight: bold;
+            color: #4CAF50;
+            margin-top: 10px;
+            margin-bottom: 20px;
+        }
+        .stButton > button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .stButton > button:hover {
+            background-color: #45a049;
+        }
+        .stTextInput > div {
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 5px;
+            background-color: #f9f9f9;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .login-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            max-width: 400px;
+            margin: auto;
+            padding: 20px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            background-color: #ffffff;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
+
+    # Título principal do site
+    st.markdown('<h1 class="main-title">Site de Tarefas - Inteligência Logística</h1>', unsafe_allow_html=True)
+
+    # Layout centralizado do formulário de login
+    #st.markdown('<div class="login-container">', unsafe_allow_html=True)
+    st.markdown('<h2 class="stTitle">🔒 Login</h2>', unsafe_allow_html=True)
     
-    usuario = st.text_input("Usuário")
-    senha = st.text_input("Senha", type="password")
+    # Campos de entrada
+    usuario = st.text_input("Usuário", key="login_usuario")
+    senha = st.text_input("Senha", type="password", key="login_senha")
     
+    # Botão de login
     if st.button("Entrar"):
         if verificar_login(usuario, senha):
             st.success(f"Login realizado com sucesso! Bem-vindo, {usuario}.")
@@ -96,6 +156,11 @@ def tela_login():
             st.session_state['usuario'] = usuario
         else:
             st.error("Usuário ou senha incorretos!")
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+
+
+
 
 def remover_tarefa_mongodb(tarefa_id):
     """Remove uma tarefa do MongoDB."""
@@ -379,8 +444,6 @@ def tela_overview():
                             novo_status = "Não iniciada"
                             alterar_status_mongodb(tarefa['_id'], novo_status, st.session_state['usuario'])
                             st.success(f"Tarefa '{tarefa['titulo']}' foi marcada como Não iniciada.")
-
-
 
 
 

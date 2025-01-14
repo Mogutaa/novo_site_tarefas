@@ -393,7 +393,7 @@ def tela_overview():
 
     # Gráfico de status das tarefas
     st.subheader("📊 Gráfico de Status das Tarefas")
-    cores = ['#D32F2F', '#F57C00', '#388E3C']  # Vermelho, Laranja, Verde
+    cores = ['#388E3C','#F57C00', '#D32F2F']  # Verde, Laranja, Vermelho
     fig, ax = plt.subplots()
     tarefas_por_status.plot(kind="bar", color=cores, ax=ax)
 
